@@ -61,22 +61,20 @@ st.sidebar.markdown("## Filtros")
 # Leitura dos dados
 @st.cache_data
 def carregar_dados():
-    # resultados = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/Pervisoes.csv', sep=';', decimal=',')    
-    # partidos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/dados_partidos.csv', sep=';', decimal=',')    
-    # Simbolos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/siglas_partidos.csv', sep=';', decimal=',')
+
     resultados = pd.read_csv('data/Pervisoes.csv', sep=';', decimal=',')
     partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')
-    Simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
-    return resultados, partidos, Simbolos
+    simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
+    return resultados, partidos, simbolos
 
-resultados, partidos, Simbolos = carregar_dados()
+resultados, partidos, simbolos = carregar_dados()
 
 # Converter os tipos de dados para garantir compatibilidade
 resultados['Ano'] = resultados['Ano'].astype(str)
 partidos['Ano'] = partidos['Ano'].astype(str)
 
 # Junção com dados dos partidos (inclui cores, nomes, etc.)
-df = pd.merge(resultados, Simbolos, on=['Partido'], how='inner')
+df = pd.merge(resultados, simbolos, on=['Partido'], how='inner')
 
 
 # Filtros
