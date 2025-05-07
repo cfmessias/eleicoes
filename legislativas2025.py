@@ -61,9 +61,12 @@ st.sidebar.markdown("## Filtros")
 # Leitura dos dados
 @st.cache_data
 def carregar_dados():
-    resultados = pd.read_csv('data/Pervisoes.csv', sep=';', decimal=',')
-    partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')
-    Simbolos = pd.read_csv('data/Siglas_partidos.csv', sep=';', decimal=',')
+    resultados = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/Pervisoes.csv', sep=';', decimal=',')    
+    partidos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/dados_partidos.csv', sep=';', decimal=',')    
+    Simbolos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/siglas_partidos.csv', sep=';', decimal=',')
+    # resultados = pd.read_csv('data/Pervisoes.csv', sep=';', decimal=',')
+    # partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')
+    # Simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
     return resultados, partidos, Simbolos
 
 resultados, partidos, Simbolos = carregar_dados()
@@ -288,8 +291,11 @@ with tabs[1]:
         """, unsafe_allow_html=True)
     
 with tabs[2]:
-    dataset = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')
+    dataset = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/evolucao.csv', sep=';', decimal=',')
+    #dataset = pd.read_csv('data/evolucao.csv', sep=';', decimal=',')
+    dataset = dataset[dataset['Visão'] == tipo_selecionado]
     # Definir as cores para cada partido
+    
     cores_partidos = {
         'AD': '#ff7d0e',
         'PS': '#de2226',
