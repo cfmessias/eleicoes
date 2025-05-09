@@ -8,6 +8,11 @@ from io import BytesIO
 import base64
 from PIL import Image
 import matplotlib.colors as mcolors
+import unicodedata
+
+def normalizar(texto):
+    return unicodedata.normalize('NFC', texto)
+
 
 # Configurações iniciais
 st.set_page_config(page_title="Eleições em Portugal", layout="wide")
@@ -26,6 +31,7 @@ css = """
         background-color: #f8f9fa;
         padding: 1rem;
         border-right: 1px solid #dee2e6;
+        background: linear-gradient(to right, #cbd3d6 ,#0c495f  );
     }
     
     [data-testid="stSidebar"] .css-1d391kg {
@@ -35,19 +41,23 @@ css = """
     .stSelectbox label {
         font-size: 16px;
         font-weight: bold;
-        color: #333;
+        color: #02394e;
         margin-bottom: 5px;
+       
     }
     
     .stSelectbox div[data-baseweb="select"] {
         border-radius: 5px;
     }
-    
+    .stApp {
+        background: linear-gradient(to right, #0c495f   , #cbd3d6  );
+    }
     /* Título da sidebar */
     [data-testid="stSidebar"] h2 {
         font-size: 20px;
-        color: #1f77b4;
-        text-align: center;
+        color: white;
+        font-weight: bold;
+        text-align: left;
         margin-bottom: 20px;
     }
 </style>
@@ -61,10 +71,12 @@ st.sidebar.markdown("## Filtros")
 # Leitura dos dados
 @st.cache_data
 def carregar_dados():
-
-    resultados = pd.read_csv('data/Pervisoes.csv', sep=';', decimal=',')
-    partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')
-    simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
+    resultados = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/previsoes.csv', sep='|', decimal=',')    
+    partidos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/dados_partidos.csv', sep=';', decimal=',')    
+    simbolos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/siglas_partidos.csv', sep=';', decimal=',')
+    # resultados = pd.read_csv('data/Previsoes.csv', sep=';', decimal=',')
+    # partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')
+    # simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
     return resultados, partidos, simbolos
 
 resultados, partidos, simbolos = carregar_dados()
@@ -76,35 +88,55 @@ partidos['Ano'] = partidos['Ano'].astype(str)
 # Junção com dados dos partidos (inclui cores, nomes, etc.)
 df = pd.merge(resultados, simbolos, on=['Partido'], how='inner')
 
-
 # Filtros
+df['Visão'] = df['Visão'].astype(str).str.strip().str.replace('\u200b', '').str.replace('\xa0', '').str.normalize('NFKD')
 anos = sorted(df['Ano'].unique(), reverse=True)
 tipos = df['Visão'].unique()
 distritos = sorted(df['Distrito'].unique())
-
-# Seus elementos da sidebar
+print(tipos)
 ano_selecionado = st.sidebar.selectbox("Seleciona o ano", anos)
 tipo_selecionado = st.sidebar.selectbox("Seleciona o tipo de previsão", tipos)
 distrito_selecionado = st.sidebar.selectbox("Seleciona o distrito", distritos)
 
 df['Previsão (%)']=df['Previsão (%)']*100
 
-df_filtrado = df[(df['Ano'] == ano_selecionado) & (df['Visão'] == tipo_selecionado) & (df['Distrito'] == distrito_selecionado)]
+df_filtrado   = df[(df['Ano'] == ano_selecionado) & (df['Visão'] == tipo_selecionado) & (df['Distrito'] == distrito_selecionado)]
 df_filtrado24 = df[(df['Ano'] == '2024') & (df['Visão'] == tipo_selecionado) & (df['Distrito'] == distrito_selecionado)]
 df_filtrado25 = df[(df['Ano'] == '2025') & (df['Visão'] == tipo_selecionado) & (df['Distrito'] == distrito_selecionado)]
 
+df_filtradoH = df[(df['Ano'] == '2025') & (df['Visão'] != 'Sondagens') & (df['Visão'] != 'Expetativas') & (df['Distrito'] == ' Totais')]
+df_filtradoS = df[(df['Ano'] == '2025') & (df['Visão'] == 'Sondagens') & (df['Distrito'] == ' Totais')]
+df_filtradoE = df[(df['Ano'] == '2025') & (df['Visão'] == 'Expetativas') & (df['Distrito'] == ' Totais')]
+
 # Tabs para diferentes gráficos
-tabs = st.tabs(["Previsões", "Comparativo","Evolução"])
+tabs = st.tabs(["Previsões", "2024-2025","% - tipo previsão","Mandatos - tipo previsão","Evolução"])
 
 with tabs[0]:
     
-    st.subheader("Resultados por Partido")
+    custom_font_css = """
+    <style>
+        .custom-subheader {
+            font-family: 'Arial', sans-serif;
+            font-size: 18px !important;
+            font-weight: bold;
+            text-align: left !important;
+            color: white !important;
+            /* Adicione outras propriedades de estilo conforme necessário */
+        }
+    </style>
+    """
 
+    # Injetando o CSS
+    st.markdown(custom_font_css, unsafe_allow_html=True)
+
+    # Usando uma div com a classe personalizada em vez de st.subheader()
+    
     df_ord = df_filtrado.sort_values(by="Previsão (%)", ascending=False)
-    col1, col2 = st.columns([3, 2])
+    col1, col2 , col3 = st.columns([5,1,1])
     # Primeiro o gráfico     
     
     with col1:
+        st.markdown('<div class="custom-subheader">    % por Partido</div>', unsafe_allow_html=True)
         fig, ax = plt.subplots(figsize=(12, 6))
         bars = ax.bar(df_ord["Partido"], df_ord["Previsão (%)"], color=df_ord["Cor"])
         
@@ -121,72 +153,98 @@ with tabs[0]:
         ax.grid(axis='y', linestyle='--', alpha=0.7)
 
         plt.tight_layout()
-        st.pyplot(fig)
-   
-    with col2:
-        # Exemplo de visualização ao estilo "cartão"
-        abstencao = df_filtrado['Abstenção'].values[0] * 100  # Supondo que você tenha uma coluna de abstenção no DataFrame
-        brancos = df_filtrado['Brancos'].values[0] 
-        #brancos_formatado = f"{brancos:,}".replace(",", ".")
-        brancos_formatado = f"{brancos / 1000:.1f}K"
-        st.markdown(f"""
-        <div style="background-color:#0072CE; padding:6px 6px; border-radius:5px; width:100px; text-align:center">
-            <span style="color:white; font-weight:bold; font-size:14px;">Abstenção</span>
-        </div>
-        <div style="background-color:white; padding:6px 6px; border-radius:0 0 5px 5px; width:100px; text-align:center; border:1px solid #ccc;">
-            <span style="color:#0072CE; font-weight:bold; font-size:20px;">{abstencao:.2f}%</span>
-        </div>
-        <div><br></div>
-        <div style="background-color:#0072CE; padding:6px 6px; border-radius:5px; width:100px; text-align:center">
-            <span style="color:white; font-weight:bold; font-size:14px;">Brancos</span>
-        </div>
-        <div style="background-color:white; padding:6px 6px; border-radius:0 0 5px 5px; width:100px; text-align:center; border:1px solid #ccc;">
-            <span style="color:#0072CE; font-weight:bold; font-size:20px;">{brancos_formatado}</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-       # Gráfico de Mandatos (Pie Chart)
-    st.subheader("Distribuição de Mandatos")
-
-    colsub1, colsub2,colsub3 = st.columns([0.5,2,2.5])
+        st.pyplot(fig, transparent=True)
+       
+    
+    # Gráfico de Mandatos (Pie Chart)
+    colsub1, colsub2,colsub3 = st.columns([0.001,4.5,2])
     with colsub2:
 
-        fig2, ax2 = plt.subplots(figsize=(5, 5))
+
+        #---------------------
+        st.markdown('<div class="custom-subheader">Assentos parlamentares</div>', unsafe_allow_html=True)
+        fig2, ax2 = plt.subplots(figsize=(4, 2))
 
         df_pie = df_ord[df_ord['Mandatos'] > 0]
-        # Calcular corretamente o número de partidos
-        num_partidos = len(df_pie)  # Conta o número de linhas no DataFrame filtrado
-
-        # Criar explode com o tamanho correto
-        explode = [0] * num_partidos  # Cria uma lista de zeros do tamanho correto
-        if num_partidos > 0:  # Verificar se há pelo menos um partido
-            explode[0] = 0.1  # Destacar o primeiro partido
-
-        explode = [0.15] * num_partidos
-
-        # Limpar os valores de cor (remover espaços extras)
+        num_partidos = len(df_pie)
+        explode = [0.25] * num_partidos
         df_pie['Cor_limpa'] = df_pie['Cor'].str.strip()
-        ax2.pie(
+
+        # Primeiro, criar o gráfico sem labels (isso é importante)
+        wedges, _ = ax2.pie(
             df_pie['Mandatos'],
-            labels=[f"{row['Partido']} ({row['Mandatos']})" for _, row in df_pie.iterrows()],
             colors=df_pie['Cor'],
-            #autopct='%1.1f%%',
+            explode=explode,
             startangle=140,
             shadow=True,
-            radius=1.2,
-            explode=explode  # Destaque para fatias específicas (afastamento)
-        )
-        ax2.axis('equal')  # Igual proporção para manter o círculo
-        st.pyplot(fig2)
+            radius=1.0,  # Usar raio 1.0 como base
+            labels=None  # Sem labels iniciais
+            #wedgeprops={'linewidth': 1, 'edgecolor': 'white'}
+)
 
+        # Adicionar linhas e labels manualmente
+        for i, wedge in enumerate(wedges):
+            # Obter o ângulo médio da fatia em graus
+            ang = (wedge.theta1 + wedge.theta2) / 2
+            # Converter para radianos para cálculos
+            ang_rad = np.deg2rad(ang)
+            
+            # Raio aumentado para a posição do texto
+            # Considerar o explode na posição inicial
+            x1 = (1.0 + explode[i]) * np.cos(ang_rad)
+            y1 = (1.0 + explode[i]) * np.sin(ang_rad)
+            
+            # Posição final da linha (mais afastada)
+            x2 = 1.35 * np.cos(ang_rad)
+            y2 = 1.35 * np.sin(ang_rad)
+            
+            # Texto da label
+            partido = df_pie.iloc[i]['Partido']
+            mandatos = int(df_pie.iloc[i]['Mandatos'])
+            label = f"{partido} ({mandatos})"
+            
+            # Determinar o alinhamento do texto
+            horizontalalignment = "left" if x2 >= 0 else "right"
+            
+            # Adicionar a linha diretamente
+            ax2.plot([x1, x2], [y1, y2], color='black', linewidth=0.5)
+            
+            # Adicionar o texto
+            ax2.text(
+                x2 * 1.05,  # Pequeno ajuste adicional
+                y2 * 1.05,
+                label,
+                horizontalalignment=horizontalalignment,
+                verticalalignment='center',
+                fontsize=5,
+                fontweight='bold',
+                fontfamily='Arial'
+            )
 
+        ax2.axis('equal')
+        ax2.set_xlim(-1.5, 1.5)  # Aumentar os limites para acomodar os textos
+        ax2.set_ylim(-1.5, 1.5)
+        st.pyplot(fig2, transparent=True)
 
+        abstencao = df_filtrado['Abstenção'].values[0] * 100  # Supondo que você tenha uma coluna de abstenção no DataFrame
+        brancos = df_filtrado['Brancos'].values[0] 
+        
+        brancos_formatado = f"{brancos / 1000:.1f}K"
+        st.markdown(f"""
 
+        <div style=" padding:6px 6px; border-radius:0 0 5px 5px; width:300px; text-align:center; ">
+            <span style="color:white; font-weight:bold; font-size:12px;">Abstenção: {abstencao:.2f}%</span>
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> 
+            <span style="color:white; font-weight:bold; font-size:12px;">Brancos: {brancos_formatado}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    #------------------------------
 with tabs[1]:
-    st.subheader("Resultados por Partido")
+    # Usando uma div com a classe personalizada em vez de st.subheader()
+    st.markdown('<div class="custom-subheader">Resultados por Partido</div>', unsafe_allow_html=True)
 
-    col1, col2 = st.columns([3, 2])
+    col1, col2 = st.columns([4, 1])
+    
     with col1:
         df_ord24 = df_filtrado24.sort_values(by="Previsão (%)", ascending=False)
         df_ord25 = df_filtrado25.sort_values(by="Previsão (%)", ascending=False)
@@ -208,9 +266,26 @@ with tabs[1]:
         ax.grid(axis='y', linestyle='--', alpha=0.7)
 
         plt.tight_layout()
-        st.pyplot(fig3)
+        st.pyplot(fig3, transparent=True)
 
-                   
+   
+        # Exemplo de visualização ao estilo "cartão"
+        abstencao = df_filtrado25['Abstenção'].values[0] * 100  # Supondo que você tenha uma coluna de abstenção no DataFrame
+        brancos = df_filtrado25['Brancos'].values[0] 
+        #brancos_formatado = f"{brancos:,}".replace(",", ".")
+        brancos_formatado = f"{brancos / 1000:.1f}K"
+        st.markdown(f"""
+        <div style=" padding:6px 6px; border-radius:0 0 5px 5px; width:300px; text-align:center; ">
+            <span style="color:white; font-weight:bold; font-size:12px;">Abstenção: {abstencao:.2f}%</span>
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> 
+            <span style="color:white; font-weight:bold; font-size:12px;">Brancos: {brancos_formatado}</span>
+            <span><br></span> 
+        </div>
+        <span style=" padding:6px 6px; border-radius:5px; width:100px; text-align:center">    
+            <span><br></span> 
+        </div>
+        """, unsafe_allow_html=True)
+
         fig4, ax = plt.subplots(figsize=(12, 6))
         bars2 = ax.bar(df_ord24["Partido"], df_ord24["Previsão (%)"], color=df_ord24["Cor"])
         plt.xticks(rotation=45, ha='right')               
@@ -229,71 +304,292 @@ with tabs[1]:
         # Adicionar grid lines horizontais
         ax.grid(axis='y', linestyle='--', alpha=0.7)
         plt.tight_layout()
-        st.pyplot(fig4)    
+        st.pyplot(fig4, transparent=True)    
         
-           
-    with col2:
+   
+        # Exemplo de visualização ao estilo "cartão"
+        abstencao = df_filtrado24['Abstenção'].values[0] * 100  # Supondo que você tenha uma coluna de abstenção no DataFrame
+        brancos = df_filtrado24['Brancos'].values[0] 
+        
+        brancos_formatado = f"{brancos / 1000:.1f}K"
+        st.markdown(f"""
+
+        <div style=" padding:6px 6px; border-radius:0 0 5px 5px; width:300px; text-align:center; ">
+            <span style="color:white; font-weight:bold; font-size:12px;">Abstenção: {abstencao:.2f}%</span>
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> 
+            <span style="color:white; font-weight:bold; font-size:12px;">Brancos: {brancos_formatado}</span>
+        </div>
+        
+
+        """, unsafe_allow_html=True)
+       
+
+
+with tabs[2]:
+    # Definindo o CSS personalizado
+    custom_font_css = """
+    <style>
+        .custom-subheader {
+            font-family: 'Arial', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1E88E5;
+            /* Adicione outras propriedades de estilo conforme necessário */
+        }
+    </style>
+    """
+
+    # Injetando o CSS
+    st.markdown(custom_font_css, unsafe_allow_html=True)
+
+    # Usando uma div com a classe personalizada em vez de st.subheader()
+    #st.markdown('<div class="custom-subheader">Resultados por Partido</div>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        df_ordH = df_filtradoH.sort_values(by="Previsão (%)", ascending=False)
+        df_ordS = df_filtradoS.sort_values(by="Previsão (%)", ascending=False)
+        df_ordE = df_filtradoE.sort_values(by="Previsão (%)", ascending=False)
+        
+        # Primeiro o gráfico     
+        fig3, ax = plt.subplots(figsize=(12, 6))
+        bars = ax.bar(df_ordH["Partido"], df_ordH["Previsão (%)"], color=df_ordH["Cor"])
+        plt.xticks(rotation=45, ha='right')
+        ax.legend(title="Histórico",title_fontsize=20)
+        ax.set_ylabel("% de Votos")
+        #ax.set_xlabel("Partido")
+        ax.bar_label(bars, fmt="%.2f%%", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
+        # Alterar a cor do título da legenda
+        legend = ax.legend(title="Histórico", title_fontsize=20)
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')   
+        # Remover a moldura
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Adicionar grid lines horizontais
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        for bar in bars:
+            height = bar.get_height()
+            x = bar.get_x() + bar.get_width() / 2
+
+            # Label no topo
+            #ax.text(x, height + 0.5, f"{height:.2f}%", ha='center', va='bottom', fontsize=12, color='white')
+
+            # Label no meio da barra
+            #ax.text(x, height / 2, df_ordH["Mandatos"], ha='center', va='center', fontsize=10, color='black')
+
+        plt.tight_layout()
+        st.pyplot(fig3, transparent=True)
+
+                   
+        fig4, ax = plt.subplots(figsize=(12, 6))
+        bars2 = ax.bar(df_ordS["Partido"], df_ordS["Previsão (%)"], color=df_ordS["Cor"])
+        plt.xticks(rotation=45, ha='right')               
+        # Configurações do gráfico
+        ax.set_xticks(range(len(df_ordS["Partido"])))
+        ax.set_xticklabels(df_ordS["Partido"], rotation=45, ha='right')
+        ax.set_ylabel("% de Votos")
+        #ax.set_xlabel("Partido")
+        legend = ax.legend(title="Sondagens",fontsize=30,title_fontsize=20)
+        ax.bar_label(bars2, fmt="%.2f%%", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')  
+        # Remover a moldura
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Adicionar grid lines horizontais
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        st.pyplot(fig4, transparent=True)    
+       
+        fig5, ax = plt.subplots(figsize=(12, 6))
+        bars2 = ax.bar(df_ordE["Partido"], df_ordE["Previsão (%)"], color=df_ordE["Cor"])
+        plt.xticks(rotation=45, ha='right')               
+        # Configurações do gráfico
+        ax.set_xticks(range(len(df_ordE["Partido"])))
+        ax.set_xticklabels(df_ordE["Partido"], rotation=45, ha='right')
+        ax.set_ylabel("% de Votos")
+        #ax.set_xlabel("Partido")
+        legend = ax.legend(title="Expetativas",fontsize=30,title_fontsize=20)
+        ax.bar_label(bars2, fmt="%.2f%%", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')  
+        # Remover a moldura
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Adicionar grid lines horizontais
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        st.pyplot(fig5, transparent=True)   
         # Exemplo de visualização ao estilo "cartão"
         abstencao = df_filtrado25['Abstenção'].values[0] * 100  # Supondo que você tenha uma coluna de abstenção no DataFrame
         brancos = df_filtrado25['Brancos'].values[0] 
         #brancos_formatado = f"{brancos:,}".replace(",", ".")
         brancos_formatado = f"{brancos / 1000:.1f}K"
         st.markdown(f"""
-        <div style="background-color:#0072CE; padding:6px 6px; border-radius:5px; width:100px; text-align:center">
-            <span style="color:white; font-weight:bold; font-size:14px;">Abstenção</span>
+        <div style=" padding:6px 6px; border-radius:0 0 5px 5px; width:300px; text-align:center; ">
+            <span style="color:white; font-weight:bold; font-size:12px;">Abstenção: {abstencao:.2f}%</span>
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> 
+            <span style="color:white; font-weight:bold; font-size:12px;">Brancos: {brancos_formatado}</span>
+            <span><br></span> 
         </div>
-        <div style="background-color:white; padding:6px 6px; border-radius:0 0 5px 5px; width:100px; text-align:center; border:1px solid #ccc;">
-            <span style="color:#0072CE; font-weight:bold; font-size:20px;">{abstencao:.2f}%</span>
+        <span style=" padding:6px 6px; border-radius:5px; width:100px; text-align:center">    
+            <span><br></span> 
         </div>
-        <div><br></div>
-        <div style="background-color:#0072CE; padding:6px 6px; border-radius:5px; width:100px; text-align:center">
-            <span style="color:white; font-weight:bold; font-size:14px;">Brancos</span>
-        </div>
-        <div style="background-color:white; padding:6px 6px; border-radius:0 0 5px 5px; width:100px; text-align:center; border:1px solid #ccc;">
-            <span style="color:#0072CE; font-weight:bold; font-size:20px;">{brancos_formatado}</span>
-        </div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
-        <div><br></div>
         """, unsafe_allow_html=True)
 
+with tabs[3]:
+    # Definindo o CSS personalizado
+    custom_font_css = """
+    <style>
+        .custom-subheader {
+            font-family: 'Arial', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1E88E5;
+            /* Adicione outras propriedades de estilo conforme necessário */
+        }
+    </style>
+    """
 
+    # Injetando o CSS
+    st.markdown(custom_font_css, unsafe_allow_html=True)
+
+    # Usando uma div com a classe personalizada em vez de st.subheader()
+    #st.markdown('<div class="custom-subheader">Resultados por Partido</div>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        df_ordH = df_filtradoH.sort_values(by="Mandatos", ascending=False)
+        df_ordS = df_filtradoS.sort_values(by="Mandatos", ascending=False)
+        df_ordE = df_filtradoE.sort_values(by="Mandatos", ascending=False)
+        
+        # Primeiro o gráfico     
+        fig3, ax = plt.subplots(figsize=(12, 6))
+        bars = ax.bar(df_ordH["Partido"], df_ordH["Mandatos"], color=df_ordH["Cor"])
+        plt.xticks(rotation=45, ha='right')
+        ax.legend(title="Histórico",title_fontsize=20)
+        ax.set_ylabel("Mandatos")
+        #ax.set_xlabel("Partido")
+        ax.bar_label(bars, fmt="%d", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
+        # Alterar a cor do título da legenda
+        legend = ax.legend(title="Histórico", title_fontsize=20)
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')   
+        # Remover a moldura
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Adicionar grid lines horizontais
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        for bar in bars:
+            height = bar.get_height()
+            x = bar.get_x() + bar.get_width() / 2
+
+        plt.tight_layout()
+        st.pyplot(fig3, transparent=True)
+
+                   
+        fig4, ax = plt.subplots(figsize=(12, 6))
+        bars2 = ax.bar(df_ordS["Partido"], df_ordS["Mandatos"], color=df_ordS["Cor"])
+        plt.xticks(rotation=45, ha='right')               
+        # Configurações do gráfico
+        ax.set_xticks(range(len(df_ordS["Partido"])))
+        ax.set_xticklabels(df_ordS["Partido"], rotation=45, ha='right')
+        ax.set_ylabel("% de Votos")
+        #ax.set_xlabel("Partido")
+        legend = ax.legend(title="Sondagens",fontsize=30,title_fontsize=20)
+        ax.bar_label(bars2, fmt="%d", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')  
+        # Remover a moldura
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Adicionar grid lines horizontais
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        st.pyplot(fig4, transparent=True)    
        
+        fig5, ax = plt.subplots(figsize=(12, 6))
+        bars2 = ax.bar(df_ordE["Partido"], df_ordE["Mandatos"], color=df_ordE["Cor"])
+        plt.xticks(rotation=45, ha='right')               
+        # Configurações do gráfico
+        ax.set_xticks(range(len(df_ordE["Partido"])))
+        ax.set_xticklabels(df_ordE["Partido"], rotation=45, ha='right')
+        ax.set_ylabel("% de Votos")
+        #ax.set_xlabel("Partido")
+        legend = ax.legend(title="Expetativas",fontsize=30,title_fontsize=20)
+        ax.bar_label(bars2, fmt="%d", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')  
+        # Remover a moldura
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Adicionar grid lines horizontais
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        st.pyplot(fig5, transparent=True)   
         # Exemplo de visualização ao estilo "cartão"
-        abstencao = df_filtrado24['Abstenção'].values[0] * 100  # Supondo que você tenha uma coluna de abstenção no DataFrame
-        brancos = df_filtrado24['Brancos'].values[0] 
+        abstencao = df_filtrado25['Abstenção'].values[0] * 100  # Supondo que você tenha uma coluna de abstenção no DataFrame
+        brancos = df_filtrado25['Brancos'].values[0] 
         #brancos_formatado = f"{brancos:,}".replace(",", ".")
         brancos_formatado = f"{brancos / 1000:.1f}K"
         st.markdown(f"""
-        <div style="background-color:#0072CE; padding:6px 6px; border-radius:5px; width:100px; text-align:center">
-            <span style="color:white; font-weight:bold; font-size:14px;">Abstenção</span>
+        <div style=" padding:6px 6px; border-radius:0 0 5px 5px; width:300px; text-align:center; ">
+            <span style="color:white; font-weight:bold; font-size:12px;">Abstenção: {abstencao:.2f}%</span>
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> 
+            <span style="color:white; font-weight:bold; font-size:12px;">Brancos: {brancos_formatado}</span>
+            <span><br></span> 
         </div>
-        <div style="background-color:white; padding:6px 6px; border-radius:0 0 5px 5px; width:100px; text-align:center; border:1px solid #ccc;">
-            <span style="color:#0072CE; font-weight:bold; font-size:20px;">{abstencao:.2f}%</span>
-        </div>
-        <div><br></div>
-        <div style="background-color:#0072CE; padding:6px 6px; border-radius:5px; width:100px; text-align:center">
-            <span style="color:white; font-weight:bold; font-size:14px;">Brancos</span>
-        </div>
-        <div style="background-color:white; padding:6px 6px; border-radius:0 0 5px 5px; width:100px; text-align:center; border:1px solid #ccc;">
-            <span style="color:#0072CE; font-weight:bold; font-size:20px;">{brancos_formatado}</span>
+        <span style=" padding:6px 6px; border-radius:5px; width:100px; text-align:center">    
+            <span><br></span> 
         </div>
         """, unsafe_allow_html=True)
+
+with tabs[4]:
+    dataset = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/evolucao.csv', sep=';',encoding='utf-8-sig')
+    #dataset = pd.read_csv('data/evolucao.csv', sep=';', decimal=',')
     
-with tabs[2]:
-    #dataset = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoAtual/evolucao.csv', sep=';', decimal=',')
-    dataset = pd.read_csv('data/evolucao.csv', sep=';', decimal=',')
-    dataset = dataset[dataset['Visão'] == tipo_selecionado]
     # Definir as cores para cada partido
-    
+    dataset['Visão'] = dataset['Visão'].apply(normalizar)
+    tipo_selecionado = normalizar(tipo_selecionado)
+    dataset = dataset[dataset['Visão'] == tipo_selecionado]
+
     cores_partidos = {
         'AD': '#ff7d0e',
         'PS': '#de2226',
@@ -328,7 +624,7 @@ with tabs[2]:
         if i >= len(axs):
             break
             
-        dados_partido = dataset[dataset['Partido'] == partido].sort_values('Ano')
+        dados_partido = dataset[dataset['Partido'] == partido].sort_values(['Ano','Partido'])
         
         # Preencher a área com cor esbatida
         axs[i].fill_between(
@@ -343,7 +639,8 @@ with tabs[2]:
             dados_partido['Ano'], 
             dados_partido['Percentual'], 
             color=cores_partidos.get(partido, '#888888'), 
-            linewidth=2  # Espessura da linha
+            linewidth=2 , # Espessura da linha
+            marker='o' 
         )
         
         # Configurações do gráfico
@@ -354,10 +651,16 @@ with tabs[2]:
         axs[i].grid(True, linestyle='--', alpha=0.5)
         axs[i].set_title(partido, pad=40)  # Adicionar espaço para a imagem
 
+        for x, y in zip(dados_partido['Ano'], dados_partido['Percentual']):
+            axs[i].text(
+            x, y + 1,  # Posição acima do ponto
+            f"{y:.1f}%",  # Formato do texto
+            ha='center', va='bottom', fontsize=8
+    )
     # Esconder subplots vazios se houver menos de 9 partidos
-    for j in range(min(i+1, len(axs)), len(axs)):
+    
+    for j in range(len(partidos), len(axs)):
         fig5.delaxes(axs[j])
-
     # Agora adicionamos as imagens depois que as posições dos gráficos estão definidas
     for i, partido in enumerate(partidos):
         if i >= len(axs) or axs[i] not in fig5.axes:
@@ -395,4 +698,4 @@ with tabs[2]:
 
     # Ajustar espaço no topo e entre linhas para acomodar as imagens
     plt.subplots_adjust(top=0.85, hspace=0.9)  # Espaçamento atualizado
-    st.pyplot(fig5)
+    st.pyplot(fig5, transparent=True)
