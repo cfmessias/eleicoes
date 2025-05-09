@@ -256,7 +256,15 @@ with tabs[1]:
         #ax.set_xlabel("Partido")
         ax.bar_label(bars, fmt="%.2f%%", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
 
-                # Remover a moldura
+        legend = ax.legend(title="2025", title_fontsize=24)
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')  
+        # Remover a moldura
         for spine in ax.spines.values():
             spine.set_visible(False)
 
@@ -294,7 +302,13 @@ with tabs[1]:
         #ax.set_xlabel("Partido")
         ax.legend(title="2024",fontsize=30,title_fontsize=24)
         ax.bar_label(bars2, fmt="%.2f%%", padding=3, fontsize=14)  # Tamanho 14 é apenas um exemplo
-
+        legend = ax.legend(title="2024", title_fontsize=24)
+        legend.get_title().set_color("white")
+        for text in legend.get_texts():
+            text.set_color("white")
+         # Fundo transparente
+        legend.get_frame().set_facecolor('none')
+        legend.get_frame().set_edgecolor('none')  
         # Remover a moldura
         for spine in ax.spines.values():
             spine.set_visible(False)
