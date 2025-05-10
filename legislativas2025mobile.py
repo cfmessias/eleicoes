@@ -71,7 +71,7 @@ st.sidebar.markdown("## Filtros")
 # Leitura dos dados
 @st.cache_data
 def carregar_dados():
-    resultados = pd.read_csv('dataprevisoes.csv', sep='|', decimal=',')    
+    resultados = pd.read_csv('data/previsoes.csv', sep='|', decimal=',')    
     partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')    
     simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
 
