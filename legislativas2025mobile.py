@@ -9,6 +9,8 @@ import base64
 from PIL import Image
 import matplotlib.colors as mcolors
 import unicodedata
+import matplotlib.image as mpimg
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
 def normalizar(texto):
     return unicodedata.normalize('NFC', texto)
@@ -71,10 +73,12 @@ st.sidebar.markdown("## Filtros")
 # Leitura dos dados
 @st.cache_data
 def carregar_dados():
-    resultados = pd.read_csv('data/previsoes.csv', sep='|', decimal=',')    
-    partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')    
-    simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
-
+    resultados = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/previsoes.csv', sep='|', decimal=',')    
+    partidos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/dados_partidos.csv', sep=';', decimal=',')    
+    simbolos = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/siglas_partidos.csv', sep=';', decimal=',')
+    #resultados = pd.read_csv('data/previsoes.csv', sep='|', decimal=',')    
+    #partidos = pd.read_csv('data/dados_partidos.csv', sep=';', decimal=',')    
+    #simbolos = pd.read_csv('data/siglas_partidos.csv', sep=';', decimal=',')
     return resultados, partidos, simbolos
 
 resultados, partidos, simbolos = carregar_dados()
@@ -107,7 +111,7 @@ df_filtradoS = df[(df['Ano'] == '2025') & (df['Visão'] == 'Sondagens') & (df['D
 df_filtradoE = df[(df['Ano'] == '2025') & (df['Visão'] == 'Expetativas') & (df['Distrito'] == ' Totais')]
 
 # Tabs para diferentes gráficos
-tabs = st.tabs(["Previsões", "2024-2025","% - tipo previsão","Mandatos - tipo previsão","Evolução"])
+tabs = st.tabs(["Previsões", "2024-2025","% - tipo previsão","Mandatos - tipo previsão","Parlamento","Evolução"])
 
 with tabs[0]:
     
@@ -417,10 +421,74 @@ with tabs[3]:
     </div>
     """, unsafe_allow_html=True)
 
-
 with tabs[4]:
+    
+    st.title("Previsões Legislativas 2025 ")
+    col1, col2 = st.columns([4, 1])
+    # Ordenar para manter consistência de layout
+    with col1:
+        ordem_partidos = ["BE","CDU","L","PS","PAN","AD", "IL", "CH"]
+        df_filtrado["Ordem"] = df_filtrado["Partido"].apply(lambda x: ordem_partidos.index(x) if x in ordem_partidos else len(ordem_partidos))
+        df_filtrado = df_filtrado.sort_values("Ordem").reset_index(drop=True)
+        # Gráfico
+        fig, ax = plt.subplots(figsize=(10, 5), subplot_kw=dict(aspect="equal"))
 
-    dataset = pd.read_csv('data/evolucao.csv', sep=';',encoding='utf-8-sig')
+        # Dados para gráfico
+        valores = df_filtrado["Mandatos"]
+        #valores=valores/valores.sum()*100  # Normalizar para percentagem
+        #valores = valores.round(1)  # Arredondar para 1 decimal
+
+        partidos = df_filtrado["Partido"]
+        cores = df_filtrado["Cor"]
+        logos_base64 = df_filtrado["Simbolo"]  # já em formato base64
+
+        # Semicírculo
+        angle_start = 180
+        angle_span = 180
+        total = sum(valores)
+        angles = np.cumsum([0] + list(valores / total * angle_span))
+        r = 1.5
+        inner_r = 0.8
+
+        for i, (v, p, c, logo_b64) in enumerate(zip(valores, partidos, cores, logos_base64)):
+            theta1 = angle_start - angles[i]
+            theta2 = angle_start - angles[i+1]
+            wedge = plt.matplotlib.patches.Wedge((0, 0), r, theta2, theta1, width=r-inner_r, facecolor=c, edgecolor='white')
+            ax.add_patch(wedge)
+
+            # Ângulo central da fatia
+            angle = np.deg2rad((theta1 + theta2) / 2)
+            #x_middle, y_middle = (r + inner_r) / 2 * np.cos(angle), (r + inner_r) / 2 * np.sin(angle)
+            x_middle, y_middle = r  * np.cos(angle), r  * np.sin(angle)
+            # Ponto exterior para texto e imagem
+            x_outer, y_outer = (r + 0.15) * np.cos(angle), (r + 0.15) * np.sin(angle)
+
+            # Desenhar linha guia da fatia até o texto/símbolo
+            ax.plot([x_middle, x_outer], [y_middle, y_outer], color='gray', linewidth=0.8)
+
+            # Inserir imagem fora da fatia
+            try:
+                logo_data = base64.b64decode(logo_b64.split(",")[1])
+                img = Image.open(BytesIO(logo_data)).convert("RGBA")
+                im = OffsetImage(img, zoom=0.3)
+                ab = AnnotationBbox(im, (x_outer, y_outer + 0.05), frameon=False, box_alignment=(0.3, 0.3))
+                ax.add_artist(ab)
+            except Exception as e:
+                print(f"Erro ao carregar símbolo de {p}: {e}")
+
+            # Texto com nome do partido e percentagem
+            ax.text(x_outer, y_outer - 0.02, f"{int(round(v))}", ha='center', va='center', fontsize=8, fontweight='bold')
+
+        ax.set_xlim(-2, 2)
+        ax.set_ylim(0, 2)
+        ax.axis("off")
+
+        st.pyplot(fig, transparent=True)
+
+with tabs[5]:
+    dataset = pd.read_csv('C:/PythonProjects/Legislativas2025/VersaoTotal/evolucao.csv', sep=';',encoding='utf-8-sig')
+    #dataset = pd.read_csv('data/evolucao.csv', sep=';',encoding='utf-8-sig')
+    
     # Definir as cores para cada partido
     dataset['Visão'] = dataset['Visão'].apply(normalizar)
     tipo_selecionado = normalizar(tipo_selecionado)
