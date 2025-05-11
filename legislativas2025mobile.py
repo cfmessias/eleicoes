@@ -421,15 +421,19 @@ with tabs[3]:
 
 with tabs[4]:
     
-    st.title("Previsões Legislativas 2025 ")
+    #st.title("Previsões Legislativas 2025 ")
     col1, col2 = st.columns([4, 1])
     # Ordenar para manter consistência de layout
     with col1:
+        st.markdown('<div class="custom-subheader">Assentos parlamentares</div>', unsafe_allow_html=True)
         ordem_partidos = ["BE","CDU","L","PS","PAN","AD", "IL", "CH"]
         df_filtrado["Ordem"] = df_filtrado["Partido"].apply(lambda x: ordem_partidos.index(x) if x in ordem_partidos else len(ordem_partidos))
         df_filtrado = df_filtrado.sort_values("Ordem").reset_index(drop=True)
         # Gráfico
-        fig, ax = plt.subplots(figsize=(10, 5), subplot_kw=dict(aspect="equal"))
+        fig, ax = plt.subplots(figsize=(10, 6), subplot_kw=dict(aspect="equal"))
+        #ax = fig.add_axes([0.05, 0.25, 0.9, 0.7])  # [esquerda, baixo, largura, altura]
+        
+        #plt.subplots_adjust(left=0.3, right=0.95, top=0.9, bottom=0.1)  # Deixa espaço à esquerda
 
         # Dados para gráfico
         valores = df_filtrado["Mandatos"]
@@ -448,44 +452,77 @@ with tabs[4]:
         r = 1.5
         inner_r = 0.8
 
-        # Define os deslocamentos verticais manualmente (ajustar conforme necessário)
-        offsets = [0.10, -0.08, 0.12, -0.10, 0.06, -0.07, 0.09, -0.09, 0.11, -0.06, 0.08, -0.05]  # um por partido
+        # Lista com fatores de ajuste (um por partido)
+        # 1.0 é a distância padrão. Aumenta para afastar, diminui para aproximar.
+        ajustes_distancia = {
+            'BE': 1.1,
+            'CDU': 1.0,
+            'L': 1.3,
+            'PS': 1.1,
+            'PAN': 1.2,
+            'AD': 1.2,
+            'IL': 1.3,
+            'CH': 1.3
+        }
 
         for i, (v, p, c, logo_b64) in enumerate(zip(valores, partidos, cores, logos_base64)):
+            if v == 0:
+                continue  # Ignorar partidos com 0 mandatos
+            
             theta1 = angle_start - angles[i]
             theta2 = angle_start - angles[i+1]
             wedge = plt.matplotlib.patches.Wedge((0, 0), r, theta2, theta1, width=r-inner_r, facecolor=c, edgecolor='white')
             ax.add_patch(wedge)
 
-            # Ângulo central da fatia
             angle = np.deg2rad((theta1 + theta2) / 2)
             x_middle, y_middle = r * np.cos(angle), r * np.sin(angle)
-            x_outer, y_outer = (r + 0.4) * np.cos(angle), (r + 0.4) * np.sin(angle)
 
-            # Linha guia
-            ax.plot([x_middle, x_outer], [y_middle, y_outer], color='gray', linewidth=0.5)
+            # Ajuste individual da distância
+            #fator = ajustes_distancia.get(p, 1.0)
+            #x_outer, y_outer = fator * r * np.cos(angle), fator * r * np.sin(angle)
 
-            # Offset manual
-            offset = offsets[i] if i < len(offsets) else 0  # fallback para 0 se faltar valor
-            y_adjusted = y_outer + offset
+            #ax.plot([x_middle, x_outer], [y_middle, y_outer], color='gray', linewidth=0.6)
 
-            # Logo
+                # Inserir imagem fora da fatia
+            # try:
+            #     logo_data = base64.b64decode(logo_b64.split(",")[1])
+            #     img = Image.open(BytesIO(logo_data)).convert("RGBA")
+            #     im = OffsetImage(img, zoom=0.3)
+            #     ab = AnnotationBbox(im, (x_outer, y_outer + 0.05), frameon=False, box_alignment=(0.3, 0.3))
+            #     ax.add_artist(ab)
+            # except Exception as e:
+            #     print(f"Erro ao carregar símbolo de {p}: {e}")
+            
+
+            #ax.text(x_outer, y_outer - 0.02, f"{p}", ha='center', va='center', fontsize=8, fontweight='bold')
+        # Gerar gráfico (sem símbolos nem texto dentro do semicírculo)
+
+        # Desenhar legenda personalizada
+        for i, (v, p, c, logo_b64) in enumerate(zip(valores, partidos, cores, logos_base64)):
+            if v == 0:
+                continue  # Ignorar partidos com 0 mandatos
+            x_legenda = 1.8  # ou outro valor mais à direita do gráfico
+            y_legenda = 1.5 - i * 0.15
+
+            # Desenhar símbolo
             try:
                 logo_data = base64.b64decode(logo_b64.split(",")[1])
                 img = Image.open(BytesIO(logo_data)).convert("RGBA")
                 im = OffsetImage(img, zoom=0.3)
-                ab = AnnotationBbox(im, (x_outer, y_adjusted), frameon=False, box_alignment=(0.5, 0.5))
+                ab = AnnotationBbox(im, (x_legenda, y_legenda), frameon=False, box_alignment=(0, 0.5))
                 ax.add_artist(ab)
             except Exception as e:
                 print(f"Erro ao carregar símbolo de {p}: {e}")
 
-            # Valor
-            ax.text(x_outer, y_adjusted + 0.06, f"{int(round(v))}", ha='center', va='center', fontsize=8, fontweight='bold')
+            # Texto com partido e valor
+            ax.text(x_legenda + 0.15, y_legenda, f"{p}: {int(round(v))}%", fontsize=9, va='center')
+            #fig.text(0.1, y_legenda, f"{p}: {int(round(v))}%", fontsize=9, va='center')
 
-
-        ax.set_xlim(-2, 2)
-        ax.set_ylim(0, 2)
-        ax.axis("off")
+            # Texto com valor (sem casas decimais)
+        
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(0, 2)
+            ax.axis("off")
 
         st.pyplot(fig, transparent=True)
 
