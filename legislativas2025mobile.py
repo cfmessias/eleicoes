@@ -448,6 +448,9 @@ with tabs[4]:
         r = 1.5
         inner_r = 0.8
 
+        # Define os deslocamentos verticais manualmente (ajustar conforme necessário)
+        offsets = [0.10, -0.08, 0.12, -0.10, 0.06, -0.07, 0.09, -0.09, 0.11, -0.06, 0.08, -0.05]  # um por partido
+
         for i, (v, p, c, logo_b64) in enumerate(zip(valores, partidos, cores, logos_base64)):
             theta1 = angle_start - angles[i]
             theta2 = angle_start - angles[i+1]
@@ -456,26 +459,29 @@ with tabs[4]:
 
             # Ângulo central da fatia
             angle = np.deg2rad((theta1 + theta2) / 2)
-            #x_middle, y_middle = (r + inner_r) / 2 * np.cos(angle), (r + inner_r) / 2 * np.sin(angle)
-            x_middle, y_middle = r  * np.cos(angle), r  * np.sin(angle)
-            # Ponto exterior para texto e imagem
-            x_outer, y_outer = (r + 0.15) * np.cos(angle), (r + 0.15) * np.sin(angle)
+            x_middle, y_middle = r * np.cos(angle), r * np.sin(angle)
+            x_outer, y_outer = (r + 0.4) * np.cos(angle), (r + 0.4) * np.sin(angle)
 
-            # Desenhar linha guia da fatia até o texto/símbolo
-            ax.plot([x_middle, x_outer], [y_middle, y_outer], color='gray', linewidth=0.8)
+            # Linha guia
+            ax.plot([x_middle, x_outer], [y_middle, y_outer], color='gray', linewidth=0.5)
 
-            # Inserir imagem fora da fatia
+            # Offset manual
+            offset = offsets[i] if i < len(offsets) else 0  # fallback para 0 se faltar valor
+            y_adjusted = y_outer + offset
+
+            # Logo
             try:
                 logo_data = base64.b64decode(logo_b64.split(",")[1])
                 img = Image.open(BytesIO(logo_data)).convert("RGBA")
                 im = OffsetImage(img, zoom=0.3)
-                ab = AnnotationBbox(im, (x_outer, y_outer + 0.05), frameon=False, box_alignment=(0.3, 0.3))
+                ab = AnnotationBbox(im, (x_outer, y_adjusted), frameon=False, box_alignment=(0.5, 0.5))
                 ax.add_artist(ab)
             except Exception as e:
                 print(f"Erro ao carregar símbolo de {p}: {e}")
 
-            # Texto com nome do partido e percentagem
-            ax.text(x_outer, y_outer - 0.02, f"{int(round(v))}", ha='center', va='center', fontsize=8, fontweight='bold')
+            # Valor
+            ax.text(x_outer, y_adjusted + 0.06, f"{int(round(v))}", ha='center', va='center', fontsize=8, fontweight='bold')
+
 
         ax.set_xlim(-2, 2)
         ax.set_ylim(0, 2)
