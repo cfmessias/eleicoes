@@ -456,13 +456,13 @@ with tabs[4]:
         # 1.0 é a distância padrão. Aumenta para afastar, diminui para aproximar.
         ajustes_distancia = {
             'BE': 1.1,
-            'CDU': 1.0,
-            'L': 1.3,
+            'CDU': 1.1,
+            'L': 1.1,
             'PS': 1.1,
-            'PAN': 1.2,
-            'AD': 1.2,
-            'IL': 1.3,
-            'CH': 1.3
+            'PAN': 1.1,
+            'AD': 1.1,
+            'IL': 1.1,
+            'CH': 1.1
         }
 
         for i, (v, p, c, logo_b64) in enumerate(zip(valores, partidos, cores, logos_base64)):
@@ -478,12 +478,12 @@ with tabs[4]:
             x_middle, y_middle = r * np.cos(angle), r * np.sin(angle)
 
             # Ajuste individual da distância
-            #fator = ajustes_distancia.get(p, 1.0)
-            #x_outer, y_outer = fator * r * np.cos(angle), fator * r * np.sin(angle)
+            fator = ajustes_distancia.get(p, 1.0)
+            x_outer, y_outer = fator * r * np.cos(angle), fator * r * np.sin(angle)
 
             #ax.plot([x_middle, x_outer], [y_middle, y_outer], color='gray', linewidth=0.6)
 
-                # Inserir imagem fora da fatia
+            # Inserir imagem fora da fatia
             # try:
             #     logo_data = base64.b64decode(logo_b64.split(",")[1])
             #     img = Image.open(BytesIO(logo_data)).convert("RGBA")
@@ -494,14 +494,14 @@ with tabs[4]:
             #     print(f"Erro ao carregar símbolo de {p}: {e}")
             
 
-            #ax.text(x_outer, y_outer - 0.02, f"{p}", ha='center', va='center', fontsize=8, fontweight='bold')
-        # Gerar gráfico (sem símbolos nem texto dentro do semicírculo)
+            ax.text(x_outer, y_outer - 0.02, f"{p}", ha='center', va='center', fontsize=9, fontweight='bold',color='white')
+            # Gerar gráfico (sem símbolos nem texto dentro do semicírculo)
 
         # Desenhar legenda personalizada
         for i, (v, p, c, logo_b64) in enumerate(zip(valores, partidos, cores, logos_base64)):
             if v == 0:
                 continue  # Ignorar partidos com 0 mandatos
-            x_legenda = 1.8  # ou outro valor mais à direita do gráfico
+            x_legenda = 1.9  # ou outro valor mais à direita do gráfico
             y_legenda = 1.5 - i * 0.15
 
             # Desenhar símbolo
@@ -515,7 +515,7 @@ with tabs[4]:
                 print(f"Erro ao carregar símbolo de {p}: {e}")
 
             # Texto com partido e valor
-            ax.text(x_legenda + 0.15, y_legenda, f"{p}: {int(round(v))}%", fontsize=9, va='center')
+            ax.text(x_legenda + 0.15, y_legenda, f"{p}: {int(round(v))}", fontsize=9, va='center')
             #fig.text(0.1, y_legenda, f"{p}: {int(round(v))}%", fontsize=9, va='center')
 
             # Texto com valor (sem casas decimais)
