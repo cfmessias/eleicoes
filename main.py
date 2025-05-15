@@ -35,8 +35,12 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+<<<<<<< HEAD
 modo = st.radio("", ["📊Previsões", "📈Resultados"], horizontal=True)
 
+=======
+modo = st.radio("", ["Previsões", "Resultados"], horizontal=True)
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
 # Leitura dos dados
 @st.cache_data
 def carregar_dados():
@@ -77,7 +81,11 @@ df_resultados_distrito_ano= pd.merge(resultados_distrito_ano, simbolos, on=['Par
 # -----------------------------------------
 # 1. PREVISÕES
 # -----------------------------------------
+<<<<<<< HEAD
 if  modo == "📊Previsões":
+=======
+if  modo == "Previsões":
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
 
     df_filtrado   = df_previsoes[(df_previsoes['Ano'] == ano_selecionado) & (df_previsoes['Visão'] == tipo_selecionado) & (df_previsoes['Distrito'] == distrito_selecionado)]
     previsao_opcao = st.radio("", [  "Tipo","Partidos","Parlamento"], horizontal=True)
@@ -86,9 +94,69 @@ if  modo == "📊Previsões":
         dataset = pd.merge(compara_previsoes, simbolos, on=['Partido'], how='inner')
         dataset = dataset[dataset['Ano'] != '2024']
         dataset = dataset[dataset['Ano'] != ' Sondagens']   
+<<<<<<< HEAD
  
         
         plot_previsoes(dataset)
+=======
+        cores_partidos = {
+            'AD': '#ff7d0e',
+            'PS': '#de2226',
+            'L': '#b3d179',
+            'CH': '#232154',
+            'IL': '#019ee4',
+            'BE': '#c00436',
+            'CDU': '#02389c',
+            'PAN': '#077697',
+            'Outros': '#888888'  # cor neutra para "Outros", caso exista
+        }
+
+    # Identificar os anos únicos no dataset
+        anos = sorted(dataset['Ano'].unique())
+        n_anos = len(anos)
+
+        # Layout dos subplots
+        n_rows = (n_anos + 2) // 3
+        n_cols = min(3, n_anos)
+
+        fig, axs = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows), facecolor='#a5bbc9')
+        axs = np.array(axs).flatten()  # Garantir acesso consistente
+
+        for i, ano in enumerate(anos):
+            if i >= len(axs):
+                break
+
+            dados_ano = dataset[dataset['Ano'] == ano].sort_values('Percentual', ascending=False)
+
+            partidos = dados_ano['Partido']
+            percentuais = dados_ano['Percentual']
+            cores = [cores_partidos.get(p, '#888888') for p in partidos]
+
+            axs[i].bar(partidos, percentuais, color=cores)
+
+            # Adicionar rótulos com o valor no topo de cada barra
+            for j, (x, y) in enumerate(zip(partidos, percentuais)):
+                axs[i].text(j, y + 0.5, f"{y:.1f}%", ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+            axs[i].spines['top'].set_visible(False)
+            axs[i].spines['right'].set_visible(False)
+
+            axs[i].set_title(f'{ano}', fontsize=14, fontweight='bold', pad=15)
+            axs[i].set_ylim(0, max(percentuais) * 1.2)
+            axs[i].tick_params(axis='x', rotation=45)
+            axs[i].set_ylabel("Percentual de Voto (%)")
+            axs[i].set_facecolor('#f0f0f0')
+            axs[i].grid(True, axis='y', linestyle='--', alpha=0.6)
+
+        # Esconder subplots não usados
+        for j in range(len(anos), len(axs)):
+            fig.delaxes(axs[j])
+
+        plt.subplots_adjust(wspace=0.3, hspace=0.5)
+        #fig.suptitle('Resultados Eleitorais por Ano (Gráficos de Barras)', fontsize=16, y=0.98)
+
+        st.pyplot(fig, transparent=True)    
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
         
         
     elif previsao_opcao == "Parlamento":
@@ -134,10 +202,17 @@ if  modo == "📊Previsões":
 # -----------------------------------------
 # 2. RESULTADOS
 # -----------------------------------------
+<<<<<<< HEAD
 elif modo == "📈Resultados":
     
     resultados_distrito_ano_filtrado = df_resultados_distrito_ano[(df_resultados_distrito_ano['Distrito'] == distrito_selecionado)]
     resultado_opcao = st.radio("", ["2025","Parlamento","% Partidos","Mandatos Partidos","2024-2025"], horizontal=True)
+=======
+elif modo == "Resultados":
+    
+    resultados_distrito_ano_filtrado = df_resultados_distrito_ano[(df_resultados_distrito_ano['Distrito'] == distrito_selecionado)]
+    resultado_opcao = st.radio("", ["2025","% Partidos","Mandatos Partidos","2024-2025"], horizontal=True)
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
    
     if resultado_opcao == "2025":
      
@@ -154,10 +229,17 @@ elif modo == "📈Resultados":
 
             st.pyplot(fig, transparent=True)
 
+<<<<<<< HEAD
     elif resultado_opcao == "Parlamento":
         col1, col2 = st.columns([3, 1])
         # Ordenar para manter consistência de layout
         with col1:
+=======
+
+        subcol1, subcol2 = st.columns([3.8, 1])
+        # Ordenar para manter consistência de layout
+        with subcol1:
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
             #st.markdown('<div class="custom-subheader">Assentos parlamentares</div>', unsafe_allow_html=True)
             ordem_partidos = ["BE","CDU","L","PS","PAN","AD", "IL", "CH"]
             resultados_distrito_ano_filtrado["Ordem"] = resultados_distrito_ano_filtrado["Partido"].apply(lambda x: ordem_partidos.index(x) if x in ordem_partidos else len(ordem_partidos))
@@ -173,9 +255,15 @@ elif modo == "📈Resultados":
             
             brancos_formatado = f"{brancos / 1000:.1f}K"
 
+<<<<<<< HEAD
             subcol1, subcol2 = st.columns([0.85, 2])
 
             with subcol2:
+=======
+            subsubcol1, subsubcol2 = st.columns([0.85, 2])
+
+            with subsubcol2:
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
                 st.markdown(f"""
 
                 <div style=" padding:6px 6px; border-radius:0 0 5px 5px; width:300px; text-align:center; ">
@@ -217,7 +305,11 @@ elif modo == "📈Resultados":
         
         #st.subheader("Resultados 2025-2024")
         # 👉 Coloca aqui o código da visualização 2024-2025 (pie ou barras)
+<<<<<<< HEAD
         col1, col2  = st.columns([4,2])
+=======
+        col1, col2 , col3 = st.columns([4,1,1])
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
         with col1:
             dataset_filtrados = resultados_distrito_ano_filtrado[resultados_distrito_ano_filtrado['Ano'].isin(['2025', '2024'])]
             dataset_filtrados['Mandatos'] = dataset_filtrados['Mandatos'].astype(int)  # Converter para inteiro

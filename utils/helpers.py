@@ -177,6 +177,7 @@ def plot_bar_chart_comparativo(df, coluna_valores, formato=None, legenda=None, i
     plt.tight_layout()
     return fig
 
+<<<<<<< HEAD
 def plot_previsoes(dataset):
     # Construir dicionário de cores a partir do dataset
     cores_partidos = dict(zip(dataset['Partido'], dataset['Cor']))
@@ -222,6 +223,9 @@ def plot_previsoes(dataset):
 
     plt.tight_layout()
     st.pyplot(fig, transparent=True)
+=======
+
+>>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
 
 def plot_bar_chart(df, coluna_valores=None, formato=None, legenda=None, info_extra=None,n=None):
     fig, ax = plt.subplots(figsize=(12, 6))
