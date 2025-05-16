@@ -54,20 +54,12 @@ def aplicar_filtros_sidebar(df,modo=None):
    
     
     ano_selecionado = None
-<<<<<<< HEAD
     if modo == '📊Previsões':
-=======
-    if modo == 'Previsões':
->>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
         anos = sorted(df['Ano'].unique(), reverse=True)
         ano_selecionado = st.sidebar.selectbox("Seleciona o ano", anos, key='ano_previsoes')
            
     tipo_selecionado = None
-<<<<<<< HEAD
     if modo == '📊Previsões':
-=======
-    if modo == 'Previsões':
->>>>>>> 10c95e3664101517b9ce91af0984c91a60efbd53
         tipos = df['Visão'].unique()
         tipo_selecionado = st.sidebar.selectbox("Seleciona o tipo de previsão", tipos, key='tipo_previsoes')
 
