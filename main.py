@@ -137,7 +137,7 @@ if  modo == "📊Previsões":
 elif modo == "📈Resultados":
     
     resultados_distrito_ano_filtrado = df_resultados_distrito_ano[(df_resultados_distrito_ano['Distrito'] == distrito_selecionado)]
-    resultado_opcao = st.radio("", ["📅2025","🏛️Parlamento","% 🗣Partidos","Mandatos 🗣Partidos","🗓️2024-2025"], horizontal=True)
+    resultado_opcao = st.radio("", ["📅2025","🏛️Parlamento","🗣 %","🗣 Mandatos","🗓️2024-2025"], horizontal=True)
    
     if resultado_opcao == "📅2025":
      
@@ -163,11 +163,10 @@ elif modo == "📈Resultados":
             resultados_distrito_ano_filtrado["Ordem"] = resultados_distrito_ano_filtrado["Partido"].apply(lambda x: ordem_partidos.index(x) if x in ordem_partidos else len(ordem_partidos))
             resultados_distrito_ano_filtrado = resultados_distrito_ano_filtrado.sort_values("Ordem").reset_index(drop=True)
             resultados_distrito_filtrado=resultados_distrito_ano_filtrado[resultados_distrito_ano_filtrado['Ano'].isin(['2025'])] 
-
+            mostrar_titulo_custom(f"{distrito_selecionado}")
             fig = plot_hemiciclo_parlamentar(resultados_distrito_filtrado, ordem_partidos)
             st.pyplot(fig, transparent=True)
-            # Gráfico
-           
+                      
             abstencao = resultados_distrito_filtrado['Abstenção'].values[0] * 100 # Supondo que você tenha uma coluna de abstenção no DataFrame
             brancos = resultados_distrito_filtrado['Brancos'].values[0] 
             
@@ -185,7 +184,7 @@ elif modo == "📈Resultados":
                 </div>
                 """, unsafe_allow_html=True)
 
-    elif resultado_opcao == "% 🗣Partidos":
+    elif resultado_opcao == "🗣 %":
         
         #-------------------------
         #st.subheader("Evolução de Mandatos")
@@ -200,17 +199,20 @@ elif modo == "📈Resultados":
             ylim_max=45
         )
         
-    elif resultado_opcao == "Mandatos 🗣Partidos":
+    elif resultado_opcao == "🗣 Mandatos":
     
         #-------------------------
         #st.subheader("Evolução de Mandatos")
         # 👉 Coloca aqui o código da comparação de resultados (por ano ou partido)
-        dataset = pd.merge(resultados_partido_ano, simbolos, on=['Partido'], how='inner')
+        resultados_distrito_ano_filtrado = df_resultados_distrito_ano[(df_resultados_distrito_ano['Distrito'] == distrito_selecionado)]
+        max_mandatos = resultados_distrito_ano_filtrado['Mandatos'].max()
+        max_mandatos = max_mandatos.astype(int)
+        mostrar_titulo_custom(f"{distrito_selecionado}")
         plot_metricas_com_simbolos(
-            dataset,
+            resultados_distrito_ano_filtrado,
             coluna_valor='Mandatos',
             titulo_eixo_y='Mandatos',
-            ylim_max=135  # ou outro valor adequado
+            ylim_max=max_mandatos + 5  # ou outro valor adequado
         )
         
     elif resultado_opcao == "🗓️2024-2025":

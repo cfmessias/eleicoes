@@ -1,5 +1,5 @@
 import streamlit as st
-
+import streamlit.components.v1 as components
 
 def aplicar_filtros_sidebar(df,modo=None):
     # Injetar CSS
@@ -66,8 +66,28 @@ def aplicar_filtros_sidebar(df,modo=None):
     distritos = sorted(df['Distrito'].unique())
     distrito_selecionado = st.sidebar.selectbox("Seleciona o distrito", distritos, key='distrito_previsoes')
     
-    #tipo_selecionado = st.sidebar.selectbox("Seleciona o tipo de previsão", tipos, key='tipo_previsoes')
-    #distrito_selecionado = st.sidebar.selectbox("Seleciona o distrito", distritos, key='distrito_previsoes')
+    
+
+    components.html(
+        """
+        <script>
+        const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+        const body = window.parent.document.querySelector('body');
+
+        function closeSidebarOnClickOutside(event) {
+            const isClickInside = sidebar.contains(event.target);
+            if (!isClickInside) {
+                sidebar.style.width = "0px";
+            }
+        }
+
+        body.addEventListener('click', closeSidebarOnClickOutside);
+        </script>
+        """,
+        height=0,
+        width=0
+    )
+
 
     return ano_selecionado, tipo_selecionado, distrito_selecionado
 
