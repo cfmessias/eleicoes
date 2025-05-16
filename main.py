@@ -80,9 +80,9 @@ df_resultados_distrito_ano= pd.merge(resultados_distrito_ano, simbolos, on=['Par
 if  modo == "📊Previsões":
 
     df_filtrado   = df_previsoes[(df_previsoes['Ano'] == ano_selecionado) & (df_previsoes['Visão'] == tipo_selecionado) & (df_previsoes['Distrito'] == distrito_selecionado)]
-    previsao_opcao = st.radio("", [  "Tipo","Partidos","Parlamento"], horizontal=True)
+    previsao_opcao = st.radio("", [  "⚙️Tipo","🗣Partidos","🏛️Parlamento"], horizontal=True)
 
-    if previsao_opcao == "Tipo":
+    if previsao_opcao == "⚙️Tipo":
         dataset = pd.merge(compara_previsoes, simbolos, on=['Partido'], how='inner')
         dataset = dataset[dataset['Ano'] != '2024']
         dataset = dataset[dataset['Ano'] != ' Sondagens']   
@@ -91,7 +91,7 @@ if  modo == "📊Previsões":
         plot_previsoes(dataset)
         
         
-    elif previsao_opcao == "Parlamento":
+    elif previsao_opcao == "🏛️Parlamento":
         
         col1, col2 = st.columns([3.8, 2])
         # Ordenar para manter consistência de layout
@@ -121,7 +121,7 @@ if  modo == "📊Previsões":
                 </div>
                 """, unsafe_allow_html=True)
     
-    elif previsao_opcao == "Partidos":
+    elif previsao_opcao == "🗣Partidos":
         dataset = pd.merge(compara_previsoes, simbolos, on=['Partido'], how='inner')
         dataset = dataset[dataset['Ano'] != '2024']
   
@@ -137,9 +137,9 @@ if  modo == "📊Previsões":
 elif modo == "📈Resultados":
     
     resultados_distrito_ano_filtrado = df_resultados_distrito_ano[(df_resultados_distrito_ano['Distrito'] == distrito_selecionado)]
-    resultado_opcao = st.radio("", ["2025","Parlamento","% Partidos","Mandatos Partidos","2024-2025"], horizontal=True)
+    resultado_opcao = st.radio("", ["📅2025","🏛️Parlamento","% 🗣Partidos","Mandatos 🗣Partidos","🗓️2024-2025"], horizontal=True)
    
-    if resultado_opcao == "2025":
+    if resultado_opcao == "📅2025":
      
         col1, col2 , col3 = st.columns([4,1,1])
 
@@ -154,7 +154,7 @@ elif modo == "📈Resultados":
 
             st.pyplot(fig, transparent=True)
 
-    elif resultado_opcao == "Parlamento":
+    elif resultado_opcao == "🏛️Parlamento":
         col1, col2 = st.columns([3, 1])
         # Ordenar para manter consistência de layout
         with col1:
@@ -185,7 +185,7 @@ elif modo == "📈Resultados":
                 </div>
                 """, unsafe_allow_html=True)
 
-    elif resultado_opcao == "% Partidos":
+    elif resultado_opcao == "% 🗣Partidos":
         
         #-------------------------
         #st.subheader("Evolução de Mandatos")
@@ -200,7 +200,7 @@ elif modo == "📈Resultados":
             ylim_max=45
         )
         
-    elif resultado_opcao == "Mandatos Partidos":
+    elif resultado_opcao == "Mandatos 🗣Partidos":
     
         #-------------------------
         #st.subheader("Evolução de Mandatos")
@@ -213,7 +213,7 @@ elif modo == "📈Resultados":
             ylim_max=135  # ou outro valor adequado
         )
         
-    elif resultado_opcao == "2024-2025":
+    elif resultado_opcao == "🗓️2024-2025":
         
         #st.subheader("Resultados 2025-2024")
         # 👉 Coloca aqui o código da visualização 2024-2025 (pie ou barras)
