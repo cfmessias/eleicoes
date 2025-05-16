@@ -16,21 +16,6 @@ from utils.helpers import *
 from utils.sidebar import aplicar_filtros_sidebar
 
 
-# CSS para imagem de fundo responsiva
-st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-image: url("background.jpg");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 # Configurações iniciais
 st.set_page_config(page_title="Eleições em Portugal", layout="wide")
 #st.title("Legislativas 2025")
